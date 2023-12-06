@@ -1,0 +1,207 @@
+---
+title: "Reproducible Data Assignment"
+output:
+  html_document: default
+  pdf_document: default
+date: "2023-12-01"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# Installing and loading all necessary packages
+library(ggplot2)
+library(palmerpenguins)
+library(janitor)
+library(dplyr)
+library(ragg)
+```
+
+## QUESTION 01: Data Visualisation for Science Communication
+
+### a) Provide your figure here:
+
+```{r bad figure code, echo=FALSE}
+
+# Saving the raw data
+write.csv(penguins_raw, "/Users/meghnanandi/OneDrive - Nexus365/R Assignments/Penguin_Project_Assignment/Data/penguins_raw.csv")
+
+penguins_raw <- read.csv("/Users/meghnanandi/OneDrive - Nexus365/R Assignments/Penguin_Project_Assignment/Data/penguins_raw.csv")
+
+# View some of the data and check the names of the variables using head / names(penguins_raw)
+
+# Use the ggplot2 package to make scatter plot of the chosen variables from the data as I have selected two continuous variables
+ggplot(data = penguins_raw, aes(x = Body.Mass..g., y = Flipper.Length..mm.)) +
+  geom_point(cex=4) +
+  labs(x = "Body Mass (g)", y = "Flipper Length (mm)") +
+  ylim(0,400) +
+  theme_classic()
+```
+
+### b) Write about how your design choices mislead the reader about the underlying data (200-300 words).
+
+The graph above misrepresents the data in three key ways. Firstly, the data points are too large to properly distinguish between them. While this does not hugely detract from observing an overall trend, it is misleading as it reduces the reader's ability to understand the spread of points within this trend, and therefore badly communicates the data.
+
+Secondly, the scale on the y axis is too large, spreading from a minimum of 0mm to a maximum of 400mm, when the range of the data is within 150-250mm. This is misleading as it makes the trend on the graph appear much less significant than it is in reality, showing a general positive correlation but with a very small gradient, suggesting a small correlation. if the scale was accurately assigned, this gradient would appear much larger and therefore less misleading. 
+
+Thirdly, there are no grid lines/guidance provided in the main area of the graph, which does not affect the data itself, but can be misleading/confusing during interpretation as it can be difficult to tell the value of the data points without these visual aids.
+
+Therefore, all of these visual design choices poorly communicate the distribution of the data and the underlying trend. This can also impact the reproducibility of the data as well, as it is not well understood.
+
+I found the below references useful:
+
+Nguyen, V. T., Jung, K., & Gupta, V. (2021). Examining data visualization pitfalls in scientific publications. Visual computing for industry, biomedicine, and art, 4(1), 27.
+
+Baker, M. (2016). 1,500 scientists lift the lid on reproducibility. Nature 533, 452–454
+
+McKiernan, E. et al. (2016) Point of View: How open science helps researchers succeed eLife 5:e16800
+
+------------------------------------------------------------------------
+
+## QUESTION 2: Data Pipeline
+### Introduction
+In this report I have provided guidance/explanation of my code in the form of comments throughout, and explained further where necessary in the main body of the file.
+
+In the introduction section I will load the data and clean it, removing unnecessary columns to ensure clarity when moving onto analysis:
+```{r Data Exploration}
+# Load the data from the saved location
+penguins_raw <- read.csv("/Users/meghnanandi/OneDrive - Nexus365/R Assignments/Penguin_Project_Assignment/Data/penguins_raw.csv")
+
+# Check the names of the variables before starting to clean the data
+names(penguins_raw)
+
+# I have used a separate R script to contain all the defined functions to clean the data for easier interpretation/less crowding of code in this markdown
+# Load cleaning function file here
+source("/Users/meghnanandi/OneDrive - Nexus365/R Assignments/Penguin_Project_Assignment/Functions/Cleaning_Functions.R")
+
+# To clean multiple variables, I have piped the relevant functions from the cleaning file
+penguins_clean <- penguins_raw %>%
+    clean_function() %>%
+    clean_column_names() %>%
+    shorten_species() %>%
+    remove_empty_columns_rows()
+
+# Checking that the above has worked by viewing the names post-cleaning
+names(penguins_clean)
+
+# Save the new clean version of the data into the data folder in the R Project
+write.csv(penguins_clean, "/Users/meghnanandi/OneDrive - Nexus365/R Assignments/Penguin_Project_Assignment/Data/penguins_clean.csv")
+
+```
+
+### Hypothesis
+Null hypothesis: there is no significant correlation between body mass and flipper length
+
+Alternative hypothesis: there is a significant correlation between body mass and flipper length
+
+I want to keep my hypothesis two-tailed as best practice, but I would expect increasing body mass to correlate with increasing flipper length if I were to make a one-tailed hypothesis.
+
+In this section I will filter the data and create & save an exploratory figure:
+```{r Hypothesis}
+# Filter the data set for the relevant variables in my hypothesis (body mass and flipper length), I have called this filtered version 'hypothesis_data'
+# The remove_NA function is defined in the above cleaning function file
+hypothesis_data <- penguins_clean %>%
+  subset(select = c("body_mass_g", "flipper_length_mm", "species")) %>%
+  remove_NA()
+
+# Check the above has worked only leaving the two relevant (and cleaned) columns
+head(hypothesis_data)
+
+# I now have the filtered and cleaned data based on my hypothesis, so I have plotted an exploratory figure showing species in the key for body mass and flipper length, to ascertain a trend
+exploratory_figure <- ggplot(data = hypothesis_data, aes(x = body_mass_g, y = flipper_length_mm, colour = species)) +
+  geom_point() +
+  labs(x = "Body Mass (g)", y = "Flipper Length (mm)") +
+  scale_color_manual(values = c("cyan3","purple","red")) +
+  ggtitle("Scatter Graph of the Relationship Between Body Mass and Flipper Length") +
+  theme(legend.position = "top")
+exploratory_figure
+
+# Saving the figure (exploratory_figure) using ragg, optimising the size, resolution, and scale
+# I have used a scale that best communicates the data and facilitates the display of the title too
+agg_png("/Users/meghnanandi/OneDrive - Nexus365/R Assignments/Penguin_Project_Assignment/Figures/exploratory_figure.png", 
+        width = 35, height = 25, units = "cm", res = 600, scaling = 1.5)
+exploratory_figure
+dev.off()
+```
+
+### Statistical Methods
+Based on the data above I have chosen to carry out a linear regression for the stats method, as this examines a correlation between two continuous variables (body mass and flipper length), while also being able to consider the influence of a categorical variable (species). I will analyse the output in the discussion section.
+```{r Statistics}
+
+# Executing the linear regression model ('+ species' as a categorical variable to also consider)
+penguins_model <- lm(flipper_length_mm ~ body_mass_g + species, data = hypothesis_data)
+summary(penguins_model)
+```
+
+### Results
+In this section I will plot a results figure and save it as a png, showing the distribution of the data as well as the results of the above stats test. I have defined functions in a separate R file (plotting_functions.R) to keep this report 'cleaner' and less crowded with code, similarly to the steps to produce the separated cleaning_functions.R file in the introduction section of this report. I will discuss the figure in the discussion section.
+```{r Plotting Results}
+
+# First read in plotting file containing functions
+source("/Users/meghnanandi/OneDrive - Nexus365/R Assignments/Penguin_Project_Assignment/Functions/Plotting_Functions.R")
+
+# Defining the graph encoded in the plotting file as a function to call and viewing the graph
+mass_flipper_plot <- results_figure(hypothesis_data)
+mass_flipper_plot
+
+# Saving the figure (same method as in the Hypothesis section of this report)
+agg_png("/Users/meghnanandi/OneDrive - Nexus365/R Assignments/Penguin_Project_Assignment/Figures/mass_flipper_plot.png", 
+        width = 35, height = 25, units = "cm", res = 600, scaling = 1.5)
+mass_flipper_plot
+dev.off()
+```
+
+### Discussion
+The output of the linear regression displays significant p values for the coefficients of body mass and species, demonstrating that they are individually significant in explaining variation in flipper length. The model also addresses these explanatory variables together, with an overall p value < 2.2e-16, which is highly significant as it is <0.05 and <0.01. Therefore, I can be over 99% confident that the penguin species and body mass influence flipper length. The adjusted R^2 value of 0.8528 means that this model explain 85.28% of the variation in flipper length, the rest of which is explained by other variables and/or random noise, and as this percentage is very high, I can be confident that my independent variables explain most of the variation.
+
+The results graph shows this linear regression with a 95% confidence interval surrounding it. Discussing first purely observationally, the graph shows a clear positive correlation with a very narrow confidence interval, suggesting a strong positive correlation between the variables. From a statistical view, the results are shown on the graph for clarity, showing this R^2 and p value, confirming the significant strong positive correlation.
+
+### Conclusion
+Therefore, I can reject the null hypothesis of no significant correlation, accepting the alternative hypothesis in this study: there is a significant correlation between body mass and flipper length.
+
+The hypothesis was two-tailed, but my prediction was confirmed - that the correlation is positive. It is also important to note that my analysis also shows that the species is also a significant predictor of flipper length, but this is secondary information to the main hypothesis.
+
+------------------------------------------------------------------------
+
+## QUESTION 3: Open Science
+
+### a) GitHub
+
+I have linked my RProject which includes my code for question 2 on GitHub:
+
+LINK HERE
+
+*You will be marked on your repo organisation and readability.*
+
+### b) Share your repo with a partner, download, and try to run their data pipeline.
+
+Partner's link: LINK HERE
+
+### c) Reflect on your experience running their code. (300-500 words)
+
+##### What elements of your partner's code helped you to understand their data pipeline?
+
+
+
+##### Did it run? Did you need to fix anything?
+
+
+
+##### What suggestions would you make for improving their code to make it more understandable or reproducible, and why?
+
+
+
+##### If you needed to alter your partner's figure using their code, do you think that would be easy or difficult, and why?
+
+
+
+### d) Reflect on your own code based on your experience with your partner's code and their review of yours. (300-500 words)
+
+##### What improvements did they suggest, and do you agree?
+
+
+
+##### What did you learn about writing code for other people?
+
+
+
