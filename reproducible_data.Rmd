@@ -24,9 +24,9 @@ library(ragg)
 ```{r bad figure code, echo=FALSE}
 
 # Saving the raw data
-write.csv(penguins_raw, "/Users/meghnanandi/OneDrive - Nexus365/R Assignments/Penguin_Project_Assignment/Data/penguins_raw.csv")
+write.csv(penguins_raw, "Data/penguins_raw.csv")
 
-penguins_raw <- read.csv("/Users/meghnanandi/OneDrive - Nexus365/R Assignments/Penguin_Project_Assignment/Data/penguins_raw.csv")
+penguins_raw <- read.csv("Data/penguins_raw.csv")
 
 # View some of the data and check the names of the variables using head / names(penguins_raw)
 
@@ -65,14 +65,14 @@ In this report I have provided guidance/explanation of my code in the form of co
 In the introduction section I will load the data and clean it, removing unnecessary columns to ensure clarity when moving onto analysis:
 ```{r Data Exploration}
 # Load the data from the saved location
-penguins_raw <- read.csv("/Users/meghnanandi/OneDrive - Nexus365/R Assignments/Penguin_Project_Assignment/Data/penguins_raw.csv")
+penguins_raw <- read.csv("Data/penguins_raw.csv")
 
 # Check the names of the variables before starting to clean the data
 names(penguins_raw)
 
 # I have used a separate R script to contain all the defined functions to clean the data for easier interpretation/less crowding of code in this markdown
 # Load cleaning function file here
-source("/Users/meghnanandi/OneDrive - Nexus365/R Assignments/Penguin_Project_Assignment/Functions/Cleaning_Functions.R")
+source("Functions/Cleaning_Functions.R")
 
 # To clean multiple variables, I have piped the relevant functions from the cleaning file
 penguins_clean <- penguins_raw %>%
@@ -85,7 +85,7 @@ penguins_clean <- penguins_raw %>%
 names(penguins_clean)
 
 # Save the new clean version of the data into the data folder in the R Project
-write.csv(penguins_clean, "/Users/meghnanandi/OneDrive - Nexus365/R Assignments/Penguin_Project_Assignment/Data/penguins_clean.csv")
+write.csv(penguins_clean, "Data/penguins_clean.csv")
 
 ```
 
@@ -118,7 +118,7 @@ exploratory_figure
 
 # Saving the figure (exploratory_figure) using ragg, optimising the size, resolution, and scale
 # I have used a scale that best communicates the data and facilitates the display of the title too
-agg_png("/Users/meghnanandi/OneDrive - Nexus365/R Assignments/Penguin_Project_Assignment/Figures/exploratory_figure.png", 
+agg_png("Figures/exploratory_figure.png", 
         width = 35, height = 25, units = "cm", res = 600, scaling = 1.5)
 exploratory_figure
 dev.off()
@@ -138,14 +138,14 @@ In this section I will plot a results figure and save it as a png, showing the d
 ```{r Plotting Results}
 
 # First read in plotting file containing functions
-source("/Users/meghnanandi/OneDrive - Nexus365/R Assignments/Penguin_Project_Assignment/Functions/Plotting_Functions.R")
+source("Functions/Plotting_Functions.R")
 
 # Defining the graph encoded in the plotting file as a function to call and viewing the graph
 mass_flipper_plot <- results_figure(hypothesis_data)
 mass_flipper_plot
 
 # Saving the figure (same method as in the Hypothesis section of this report)
-agg_png("/Users/meghnanandi/OneDrive - Nexus365/R Assignments/Penguin_Project_Assignment/Figures/mass_flipper_plot.png", 
+agg_png("Figures/mass_flipper_plot.png", 
         width = 35, height = 25, units = "cm", res = 600, scaling = 1.5)
 mass_flipper_plot
 dev.off()
