@@ -15,6 +15,10 @@ library(palmerpenguins)
 library(janitor)
 library(dplyr)
 library(ragg)
+
+# Saving and loading the raw data
+write.csv(penguins_raw, "Data/penguins_raw.csv")
+penguins_raw <- read.csv("Data/penguins_raw.csv")
 ```
 
 ## QUESTION 01: Data Visualisation for Science Communication
@@ -22,11 +26,6 @@ library(ragg)
 ### a) Provide your figure here:
 
 ```{r bad figure code, echo=FALSE}
-
-# Saving the raw data
-write.csv(penguins_raw, "Data/penguins_raw.csv")
-
-penguins_raw <- read.csv("Data/penguins_raw.csv")
 
 # View some of the data and check the names of the variables using head / names(penguins_raw)
 
